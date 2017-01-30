@@ -68,5 +68,7 @@ dim(learning2014)
 write.csv(learning2014, file = "learning2014")
 #Read the file back to RStudio
 read.csv("learning2014")
+#Check the structure of read data
 str(learning2014)
+#Check the first few lines of the data
 head(learning2014)
