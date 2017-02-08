@@ -1,0 +1,141 @@
+# RStudio Exercise 3 - Analysis
+
+
+Read the learning2014 data from my local folder into RStudio
+
+```{r}
+alc <- read.table("H:/Jatko-opinnot/Open data science/IODS-project/data/alc", sep=",", header=TRUE)
+```
+
+
+Explore the column names and dimensions of the data
+
+```{r}
+colnames(alc)
+dim(alc)
+```
+
+Data has information about student alcohol consumption. The original data set can be found here:  https://archive.ics.uci.edu/ml/datasets/STUDENT+ALCOHOL+CONSUMPTION
+
+There are 382 observations (rows) and 36 variables (columns) in the data. The variables include information about alcohol consumption and also social, gender and study time attributes.
+
+
+I chose the following 4 variables to study the relationship between them and alcohol consumption level:
+
+14 studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours) 
+19 activities - extra-curricular activities (binary: yes or no) 
+29 health - current health status (numeric: from 1 - very bad to 5 - very good)
+30 absences - number of school absences (numeric: from 0 to 93) 
+
+
+My hypothesis:
+High weekly study time is associated with low alcohol consumption
+Having extra-curricular activities is associated with low alcohol consumption
+Better health is associated with low alcohol consumption
+The higher the number of absences the larger proportion of students have high alcohol consumption
+
+Tabulate the target variable versus the alcohol consumption
+```{r}
+table(high_use = alc$high_use, studytime = alc$studytime)
+table(high_use = alc$high_use, activities = alc$activities)
+table(high_use = alc$high_use, health = alc$health)
+table(high_use = alc$high_use, absences = alc$absences)
+```
+
+Create bar plots for each variable 
+
+First access the necesary libraries
+```{r}
+library(tidyr); library(dplyr); library(ggplot2)
+
+```
+ Then initialize a plot of 'studytime'
+```{r}
+g1 <- ggplot(alc, aes(studytime))
+```
+
+And draw a bar plot of high_use by studytime
+```{r}
+g1 + facet_wrap("high_use") + geom_bar()
+```
+
+Do the same for activities, health and absences
+```{r}
+g2 <- ggplot(alc, aes(activities))
+g2 + facet_wrap("high_use") + geom_bar()
+
+g3 <- ggplot(alc, aes(health))
+g3 + facet_wrap("high_use") + geom_bar()
+
+g4 <- ggplot(alc, aes(absences))
+g4 + facet_wrap("high_use") + geom_bar()
+```
+
+
+Create box plots
+
+```{r}
+g5 <- ggplot(alc, aes(x = high_use, y = studytime))
+g5 + geom_boxplot() + ylab("studytime")
+
+g6 <- ggplot(alc, aes(x = high_use, y = activities))
+g6 + geom_boxplot() + ylab("activities")
+
+g7 <- ggplot(alc, aes(x = high_use, y = health))
+g7 + geom_boxplot() + ylab("health")
+
+g8 <- ggplot(alc, aes(x = high_use, y = absences))
+g8 + geom_boxplot() + ylab("absences")
+```
+
+My hypothesis:
+High weekly study time is associated with low alcohol consumption
+Result: 
+True: those who had low alcohol consumption studied more.
+
+My hypothesis:
+Having extra-curricular activities is associated with low alcohol consumption
+Result:
+The activities doesn't seem to affect the level of alcohol consumption
+
+My hypothesis:
+Better health is associated with low alcohol consumption
+Result:
+Health doesn't seem to affect the level of alcohol consumption 
+
+My hypothesis:
+The higher the number of absences the larger proportion of students have high alcohol consumption
+Result:
+True: Students with low alcohol consumption has fewer absences
+
+Logistic regression to statistically explore the relationship between alcohol consumption level and the target variables
+
+Find the model with glm()
+```{r}
+
+m <- glm(high_use ~ studytime + activities + health +absences, data = alc, family = "binomial")
+```
+
+Print out a summary of the model
+```{r}
+summary(m)
+```
+The p-values tell that only studytime and absences have effect on alcohol consumption level. This differs from my hypothesis where I thought that also activities and health would have effect on alcohol consumption level. 
+
+
+Compute the coefficients as odds ratios (OR)
+```{r}
+OR <- coef(m) %>% exp
+```
+
+Compute confidence intervals (CI)
+```{r}
+CI <- confint(m) %>% exp
+```
+
+Present the odds ratios with their confidence intervals
+```{r}
+cbind(OR, CI)
+```
+
+
