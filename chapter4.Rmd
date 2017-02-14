@@ -1,0 +1,223 @@
+# RStudio Exercise 4 - Analysis
+
+**Load the Boston data from the MASS package**
+```{r}
+library(MASS)
+data("Boston")
+```
+
+
+**Explore the structure and dimensions of the Boston data**
+```{r}
+str(Boston)
+dim(Boston)
+```
+
+The Boston data has 506 observations and 14 variables. Most of the variables are numerical, but "chas" and "rad" are integers.
+
+The variables are described as follows:
+
+crim = per capita crime rate by town. 
+
+zn = proportion of residential land zoned for lots over 25,000 sq.ft. 
+
+indus = proportion of non-retail business acres per town. 
+
+chas = Charles River dummy variable (= 1 if tract bounds river; 0 otherwise). 
+
+nox = nitrogen oxides concentration (parts per 10 million). 
+
+rm = average number of rooms per dwelling. 
+
+age = proportion of owner-occupied units built prior to 1940. 
+
+dis = weighted mean of distances to five Boston employment centres. 
+
+rad = index of accessibility to radial highways. 
+
+tax = full-value property-tax rate per \$10,000. 
+
+ptratio = pupil-teacher ratio by town. 
+
+black = 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town. 
+
+lstat = lower status of the population (percent). 
+
+medv = median value of owner-occupied homes in \$1000s. 
+
+
+**Graphical overview of the data**
+```{r}
+pairs(Boston)
+```
+
+**Summaries of the variables**
+```{r}
+summary(Boston)
+```
+
+**Create a correlation matrix of the data**
+```{r}
+library(corrplot)
+library(tidyverse)
+cor_matrix<-cor(Boston) %>% round(digits=2)
+
+corrplot(cor_matrix, method="circle", type="upper", cl.pos="b", tl.pos="d", tl.cex=0.6)
+```
+
+Largest positive correlation is between index of accessibility to radial highways ("rad"") and full-value property-tax rate per \$10,000 ("tax""). Largest negative correlations can be found between lower status of the population (percent) ("lstat"") and median value of owner-occupied homes in \$1000s ("medv"") as well as "age"" and "dis"", "nox"" and "dis"" and "dis"" and "indus". 
+
+**Standardize the data and print out the summaries of the scaled data and change the object to data frame**
+```{r}
+boston_scaled <- scale(Boston)
+summary(boston_scaled)
+boston_scaled <- as.data.frame(boston_scaled)
+```
+The varaibles are now around zero (mean = 0)
+
+**Create a categorical variable of the crime rate**
+
+Save the scaled "crim" variable as scaled_crim
+```{r}
+scaled_crim <- boston_scaled$crim
+```
+
+Create a quantile vector of crim
+```{r}
+bins <- quantile(scaled_crim)
+```
+
+Create a categorical variable 'crime'
+```{r}
+crime <- cut(scaled_crim, breaks = bins, include.lowest = TRUE, label = c("low", "med_low", "med_high", "high"))
+```
+
+Remove original crim from the dataset
+```{r}
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+```
+
+Add the new categorical value to scaled data
+```{r}
+boston_scaled <- data.frame(boston_scaled, crime)
+```
+
+**Divide the dataset to training and test sets**
+
+Place number of rows in the Boston dataset to "n"
+```{r}
+n <- nrow(boston_scaled)
+```
+
+Choose randomly 80% of the rows
+```{r}
+ind <- sample(n,  size = n * 0.8)
+```
+
+Create training set
+```{r}
+train <- boston_scaled[ind,]
+```
+
+Create test set 
+```{r}
+test <- boston_scaled[-ind,]
+```
+
+
+**Fit the linear discriminant analysis on the training set**
+
+Fit the LDA and use the crime rate as the target variable and other variables as predictor variables
+```{r}
+lda.fit <- lda(crime ~ ., data = train)
+```
+
+
+The function for lda biplot arrows
+```{r}
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+```
+
+
+Set classes as numeric
+```{r}
+classes <- as.numeric(train$crime)
+```
+
+
+Draw the LDA plot
+```{r}
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 2)
+```
+
+
+Save the correct classes from test data
+```{r}
+correct_classes <- test$crime
+```
+
+Remove the crime variable from test data
+```{r}
+test <- dplyr::select(test, -crime)
+```
+
+Predict classes with test data
+```{r}
+lda.pred <- predict(lda.fit, newdata = test)
+```
+
+Cross tabulate the results with the crime categories from the test data
+```{r}
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+All observations in class "high" also assigned to "high" class in the prediction. Most of the observations assignet to right classes in other three classes but there were some deviation. especially in the "low" class. The model predicts the "high" class well but is not that well predicting the other classes.
+
+**Reload the "Boston" data and standardize it and set it as data frame**
+```{r}
+data("Boston")
+boston_scaled <- scale(Boston)
+boston_scaled <- as.data.frame(boston_scaled)
+```
+
+Calculate the distances between the observations. Here I use euclidean distance matrix (default in the dist function)
+```{r}
+dist_eu <- dist(boston_scaled)
+```
+
+**Run k-means algorithm on the data**
+
+Determine the number of clusters
+```{r}
+k_max <- 10
+```
+
+Calculate and visualize the total within sum of squares to see the optimal number of clusters
+```{r}
+twcss <- sapply(1:k_max, function(k){kmeans(dist_eu, k)$tot.withinss})
+plot(1:k_max, twcss, type='b')
+```
+Three clusters seems to be the right amount of clusters, or maybe four. Let's go with three!
+
+Do the k-means clustering
+```{r}
+km <-kmeans(dist_eu, centers = 3)
+```
+
+Visualize the clusters
+```{r}
+pairs(boston_scaled, col = km$cluster)
+```
+
+
+**BONUS**
+
+
+
