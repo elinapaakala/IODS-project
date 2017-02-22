@@ -121,27 +121,22 @@ The first component indicates that when maternal mortality and adolescent birth 
 
 The second component (16.24 % of variance) is explained by percetange of female representatives in parliament and ratio of labour force participation of females and males which are quite highly correlated with each other. 
 
+
 ###MCA on tea data
+**OBS! The code is not run because for some reason knitting to html with it didn't work resulting in missing the whole Chapter 5 from the cource diary!**
 
-**Load, explore and visualize the tea data from FactoMineR**
-```{r}
-library(FactoMineR)
-data("tea")
-str(tea)
-dim(tea)
-```
-**Select only few columns to do the MCA with an visualize the data**
-```{r}
-keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
-tea_time <- select(tea, one_of(keep_columns))
-gather(tea_time) %>% ggplot(aes(value)) + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) + facet_wrap("key", scales = "free") 
-```
+**Load, explore and visualize the tea data from FactoMineR**  
+library(FactoMineR)  
+data("tea")  
+str(tea)  
+dim(tea)   
 
-**MCA on tea_time data**
-```{r}
-mca <- MCA(tea_time, graph=FALSE)
-summary(mca)
-plot(mca, habillage = "quali")
-```
+**Select only few columns to do the MCA with an visualize the data**  
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")  
+tea_time <- select(tea, one_of(keep_columns))  
+gather(tea_time) %>% ggplot(aes(value)) + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) + facet_wrap("key", scales = "free")  
 
-
+**MCA on tea_time data**  
+mca <- MCA(tea_time, graph=FALSE)  
+summary(mca)  
+plot(mca, habillage = "quali")  
