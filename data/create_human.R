@@ -41,3 +41,51 @@ human <- inner_join(hd, gii, by = "Country")
 
 # Save the dataset to data folder
 write.csv(human, file = "human")
+
+
+
+#RStudio Exercise 5:
+
+#Read in the data
+human <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human1.txt", sep=",", header=TRUE)
+summary(human)
+
+
+# Transform the GNI variable to numeric
+human <- mutate(human, GNI = as.numeric(GNI))
+
+
+# Select the column names to keep in the dataset
+keep_columns <- c("Country", "Edu2.FM", "Labo.FM", "Edu.Exp", "Life.Exp", "GNI", "Mat.Mor", "Ado.Birth", "Parli.F")
+# Select the kept columns to create a new dataset
+human <- select(human, one_of(keep_columns))
+
+### Remove all rows with missing values
+# print out a completeness indicator of the 'human' data
+complete.cases(human)
+# print out the data along with a completeness indicator as the last column
+data.frame(human[-1], comp = complete.cases(human))
+# Filter out all rows with NA values
+human_ <- filter(human, complete.cases(human))
+
+
+### Remove the observations not relating to countries
+# look at the last 10 observations of human
+tail(human_, n=10)
+# define the last indice we want to keep
+last <- nrow(human_) - 7
+# choose everything until the last 7 observations
+human_ <- human_[1:last, ]
+
+
+# add countries as rownames
+rownames(human_) <- human_$Country
+# remove the country name column
+human_ <- select(human_, -Country)
+
+str(human_)
+summary(human_)
+human_
+
+# Save the dataset to data folder
+write.csv(human, file = "human")

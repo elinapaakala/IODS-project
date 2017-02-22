@@ -1,0 +1,147 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+# RStudio Exercise 5 - Analysis
+
+####1. Load the human data and explore the structure and dimensions and describe the dataset
+```{r}
+human <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human2.txt", sep=",", header=TRUE)
+str(human)
+dim(human)
+```
+The human data has 155 observations and 8 variables. It combines indicators from most countries. Countries are the row names.
+
+**Health and knowledge indicators:**  
+"GNI" = Gross National Income per capita  
+"Life.Exp" = Life expectancy at birth  
+"Edu.Exp" = Expected years of schooling  
+"Mat.Mor" = Maternal mortality ratio  
+"Ado.Birth" = Adolescent birth rate  
+
+**Empowerment indicators:**  
+"Parli.F" = Percetange of female representatives in parliament  
+"Edu2.F" = Proportion of females with at least secondary education  
+"Edu2.M" = Proportion of males with at least secondary education  
+"Labo.F" = Proportion of females in the labour force  
+"Labo.M" " Proportion of males in the labour force  
+
+**New indicators:**  
+"Edu2.FM" = Edu2.F / Edu2.M = Ratio of female and male populations with secondary education  
+"Labo.FM" = Labo2.F / Labo2.M = Ratio of labour force participation of females and males  
+
+
+####2. A graphical overview and summaries of the data
+```{r}
+pairs(human)
+```
+**Calculate correlation matrix and visualize it**
+```{r}
+library(MASS)
+library(tidyverse)
+library(corrplot)
+cor_matrix<-cor(human) %>% round(digits=2)
+cor_matrix
+corrplot(cor_matrix, method="circle", type="upper", cl.pos="b", tl.pos="d", tl.cex=0.6)
+```
+**Summaries of data**
+```{r}
+summary(human)
+```
+
+Maternal mortality ratio as well as Adolescent birth rate are highly negatively correlated with  
+- Life expectancy at birth  
+- Expected years of schooling  
+- Ratio of female and male populations with secondary education  
+- GNI  
+High positive correlations can be found between  
+- Expected years of schooling and Ratio of female and male populations with secondary education  
+- Ratio of female and male populations with secondary education and Life expectancy at birth
+- Expected years of schooling and Life expectancy at birth
+- Expected years of schooling and GNI
+- Life expectancy at birth and GNI
+- Maternal mortality ratio and Adolescent birth rate 
+
+
+###PCA on not standardized human data  
+
+
+```{r}
+pca_human <- prcomp(human)
+```
+
+**Variance captured by each PC**
+```{r}
+s <- summary(pca_human)
+pca_pr <- round(100*s$importance[2, ], digits = 2)
+pca_pr
+
+```
+
+**Biplot**
+```{r}
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+biplot(pca_human, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+
+```
+
+
+###PCA on standardized human data  
+
+**Standardize the data**
+```{r}
+human_std <- scale(human)
+```
+
+```{r}
+pca_human_std <- prcomp(human_std)
+```
+
+**Variance captured by each PC**
+```{r}
+s_std <- summary(pca_human_std)
+pca_pr_std <- round(100*s_std$importance[2, ], digits = 2)
+pca_pr_std
+
+```
+
+**Biplot**
+```{r}
+pc_lab_std <- paste0(names(pca_pr_std), " (", pca_pr_std, "%)")
+biplot(pca_human_std, cex = c(0.5, 1.5), col = c("grey40", "deeppink2"), xlab = (pc_lab_std[1]) , ylab = pc_lab_std[2])
+
+```
+
+Without standardizing the data 99.99 % of variance was explained by the first PC. This is not a believable outcome of PCA. After standardizing the data the first PC explains most (53.61 %) of variance which is normal in PCA. 
+
+The first component is described on other hand by maternal mortality ratio and adolescent birth rate. These variables are highly correlated which can be seen from the arrows: there is only a small angle between them. This can be interpreted so that giving birth when adolescent mortality at birth is high. On other hand the first component is described by expected years of schooling, life expectancy at birth, ratio of females and males with secondary education and GNI. These four variables are higly correlated. This can be interpreted so that when education is at hig level, also for women, people tend to live longer and the nation has high gross national income per capita or vice versa. 
+
+The first component indicates that when maternal mortality and adolescent birth rate are high schooling, life expectancy, women schooling and GNI are low and vice versa. 
+
+The second component (16.24 % of variance) is explained by percetange of female representatives in parliament and ratio of labour force participation of females and males which are quite highly correlated with each other. 
+
+###MCA on tea data
+
+**Load, explore and visualize the tea data from FactoMineR**
+```{r}
+library(FactoMineR)
+data("tea")
+str(tea)
+dim(tea)
+```
+**Select only few columns to do the MCA with an visualize the data**
+```{r}
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+tea_time <- select(tea, one_of(keep_columns))
+gather(tea_time) %>% ggplot(aes(value)) + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) + facet_wrap("key", scales = "free") 
+```
+
+**MCA on tea_time data**
+```{r}
+mca <- MCA(tea_time, graph=FALSE)
+summary(mca)
+plot(mca, habillage = "quali")
+```
+
+
